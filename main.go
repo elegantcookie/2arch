@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"regexp"
 )
 
@@ -54,8 +53,8 @@ func matchCase(url string) (bool, error) {
 
 func handleError(error error) error {
 	if error != nil {
-		fmt.Printf("An error has occured: %s", error.Error())
-		os.Exit(-1)
+		panic(error.Error())
+
 	}
 	return nil
 }
@@ -119,6 +118,6 @@ func main() {
 			htmlFile += renderPostHtml("thread__post", postNum, datetime.Date, datetime.Time, threadInfo.Board, postNum, postNum, postText)
 		}
 	}
-	htmlFile += "</dib></body></html>"
+	htmlFile += "</div></body></html>"
 	ioutil.WriteFile(fmt.Sprintf("%d.html", threadInfo.Threads[0].Posts[0].Num), []byte(htmlFile), 0600)
 }
