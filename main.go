@@ -9,8 +9,11 @@ import (
 )
 
 type Post struct {
-	Comment string
-	Files   interface{}
+	Num       int
+	Name      string
+	Timestamp int
+	Comment   string
+	Files     interface{}
 }
 
 type PostsArray struct {
@@ -18,8 +21,9 @@ type PostsArray struct {
 }
 
 type ThreadInfo struct {
-	PostCount map[string]int
-	Threads   []PostsArray
+	Posts_Count int
+	Board       string
+	Threads     []PostsArray
 }
 
 type UrlMatchError struct {
@@ -56,6 +60,17 @@ func handleError(error error) error {
 	return nil
 }
 
+func renderPostHtml(postClassName string, args ...interface{}) string {
+	postHtml := fmt.Sprintf("<div id=\"thread-%d\" class=\""+
+		postClassName+
+		"\">"+
+		"<p>%s %s <a href=\"%s/res/#%d.html\">№%d</a>"+
+		"</p>"+
+		"<p>%s</p>"+
+		"</div><br>", args...)
+	return postHtml
+}
+
 func main() {
 	htmlUrl := "https://2ch.hk/b/res/269256093.html"
 
@@ -86,5 +101,24 @@ func main() {
 	err = json.Unmarshal(body, &threadInfo)
 	handleError(err)
 
-	fmt.Println(threadInfo.Threads[0].Posts[2].Files)
+	postNum := threadInfo.Threads[0].Posts[0].Num
+	postText := threadInfo.Threads[0].Posts[0].Comment
+
+	// THERE MUST BE A TEMPLATE ENGINE
+	htmlFile := fmt.Sprintf("<!DOCTYPE html><html><head>2ch-archiver</head><body><h1>Start of file</h1><div id=\"thread-%d\" class=\"thread\">", postNum)
+
+	for i := 0; i < threadInfo.Posts_Count; i++ {
+		postNum = threadInfo.Threads[0].Posts[i].Num
+		postText = threadInfo.Threads[0].Posts[i].Comment
+		datetime := timestampToDatetime(threadInfo.Threads[0].Posts[i].Timestamp)
+
+		if i == 0 {
+			htmlFile += renderPostHtml("thread__oppost", postNum, datetime.Date, datetime.Time, threadInfo.Board, postNum, postNum, postText)
+
+		} else {
+			htmlFile += renderPostHtml("thread__post", postNum, datetime.Date, datetime.Time, threadInfo.Board, postNum, postNum, postText)
+		}
+	}
+	htmlFile += "</dib></body></html>"
+	ioutil.WriteFile(fmt.Sprintf("%d.html", threadInfo.Threads[0].Posts[0].Num), []byte(htmlFile), 0600)
 }
