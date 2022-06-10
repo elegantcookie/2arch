@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"regexp"
 )
 
@@ -71,7 +73,7 @@ func renderPostHtml(postClassName string, args ...interface{}) string {
 }
 
 func main() {
-	htmlUrl := "https://2ch.hk/b/res/269256093.html"
+	htmlUrl := "https://2ch.hk/b/res/269302216.html"
 
 	matched, err := matchCase(htmlUrl)
 	handleError(err)
@@ -119,5 +121,10 @@ func main() {
 		}
 	}
 	htmlFile += "</div></body></html>"
-	ioutil.WriteFile(fmt.Sprintf("%d.html", threadInfo.Threads[0].Posts[0].Num), []byte(htmlFile), 0600)
+	threadNum := threadInfo.Threads[0].Posts[0].Num
+	rootPath, _ := os.Getwd()
+	fmt.Println(rootPath)
+	path := filepath.Join(rootPath, fmt.Sprintf("/threads/thread_%d", threadNum))
+	os.Mkdir(path, os.ModePerm)
+	ioutil.WriteFile(fmt.Sprintf("threads/thread_%d/%d.html", threadNum, threadNum), []byte(htmlFile), 0600)
 }
