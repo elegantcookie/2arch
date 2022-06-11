@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -41,23 +42,34 @@ func parse(url string) (*http.Response, error) {
 }
 
 func downloadFile(filePath string, url string) {
-	response, err := http.Get(url)
-	if err != nil {
-		logAndSkipError(err)
-		return
-
-	}
-
 	if _, err := os.Stat(filePath); err == nil {
 		return
 	}
 
-	data, _ := ioutil.ReadAll(response.Body)
-
-	response.Body.Close()
-	err = ioutil.WriteFile(filePath, data, 0666)
+	output, err := os.Create(filePath)
 	if err != nil {
 		logAndSkipError(err)
+		return
+	}
+	defer output.Close()
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, http.NoBody)
+	req.Close = true
+	req.Header.Set("Content-Type", "application/json")
+
+	response, err := client.Do(req)
+	if err != nil {
+		logAndSkipError(err)
+		return
+	}
+	defer response.Body.Close()
+	_, err = io.Copy(output, response.Body)
+
+	if err != nil {
+		fmt.Println(ioutil.ReadAll(response.Body))
+		logAndSkipError(err)
+		return
 	}
 
 }
