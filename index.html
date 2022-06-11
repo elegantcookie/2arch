@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ .RootPath}}/makaba.css">
+    <title>Title</title>
+</head>
+<body>
+    {{range .Posts}}
+    <div id="post-{{ .Num }}" class="{{if eq .Number 1 }}thread__oppost{{else}}thread__post{{end}}">
+        {{if eq .Number 1 }}
+        <div class="post post_type_oppost" id="post-body-{{ .Num }}" data-num="{{ .Num }}">
+            <div class="post__details" id="post-details-{{ .Num }}">
+                <span class="post__detailpart">
+
+                    <span class="post__anon">{{ .Name }}</span>
+                    <span class="post__time">{{ .Date }}</span>
+                </span>
+                <span class="post__detailpart">
+                    <a href="/{{ .Num }}.html#{{ .Num }}" class="postbtn-reply-href post__reflink" data-num="{{ .Num }}">№{{ .Num }}</a>
+                    <span class="post__number">{{ .Number }}</span>
+                </span>
+            </div>
+            <article id="m{{ .Num }}" class="post__message post__message_op">{{ .Comment }}</article>
+        </div>
+        {{else}}
+            {{ if eq .WithImg 1 }}
+            <div class="post post_type_reply post_withimg " id="post-body-{{ .Num }}" data-num="{{ .Num }}">
+                <div class="post__details" id="post-details-{{ .Num }}">
+                    <span class="post__detailpart">
+
+                        <span class="post__anon">{{ .Name }}</span>
+                        <span class="post__time">{{ .Date }}</span>
+                    </span>
+                    <span class="post__detailpart">
+                        <a href="/{{ .Num }}.html#{{ .Num }}" class="postbtn-reply-href post__reflink" data-num="{{ .Num }}">№{{ .Num }}</a>
+                        <span class="post__number">{{ .Number }}</span>
+                    </span>
+                </div>
+                <article id="m{{ .Num }}" class="post__message ">{{ .Comment }}</article>
+            </div>
+            {{else}}
+            <div class="post post_type_reply  " id="post-body-{{ .Num }}" data-num="{{ .Num }}">
+                <div class="post__details" id="post-details-{{ .Num }}">
+                        <span class="post__detailpart">
+
+                            <span class="post__anon">{{ .Name }}</span>
+                            <span class="post__time">{{ .Date }}</span>
+                        </span>
+                    <span class="post__detailpart">
+                            <a href="/{{ .Num }}.html#{{ .Num }}" class="postbtn-reply-href post__reflink" data-num="{{ .Num }}">№{{ .Num }}</a>
+                            <span class="post__number">{{ .Number }}</span>
+                        </span>
+                </div>
+                <article id="m{{ .Num }}" class="post__message ">{{ .Comment }}</article>
+            </div>
+            {{end}}
+        {{end}}
+    </div>
+   {{end}}
+</body>
+</html>

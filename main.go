@@ -4,13 +4,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sync"
+	"text/template"
+	"time"
 )
 
+type ViewData struct {
+	RootPath string
+	Posts    []Post
+}
+
 type PostFile struct {
+	Name        string
 	DisplayName string
 	FullName    string
 	Path        string
@@ -26,10 +35,14 @@ type PostFile struct {
 //}
 
 type Post struct {
-	Num       int
 	Name      string
+	Subject   string
+	Date      string
+	Num       int
+	Number    int
 	Timestamp int
 	Comment   string
+	WithImg   int
 	Files     []PostFile
 }
 
@@ -98,8 +111,9 @@ func renderPostHtml(postClassName string, args ...interface{}) string {
 }
 
 func main() {
-	htmlUrl := "https://2ch.hk/b/res/269314054.html"
+	htmlUrl := "https://2ch.hk/b/res/269379200.html"
 
+	start := time.Now()
 	matched, err := matchCase(htmlUrl)
 	handleError(err)
 
@@ -138,19 +152,42 @@ func main() {
 	os.MkdirAll(path, os.ModePerm)
 
 	// THERE MUST BE A TEMPLATE ENGINE
-	htmlFile := fmt.Sprintf("<!DOCTYPE html><html><head>2ch-archiver</head><body><h1>Start of file</h1><div id=\"thread-%d\" class=\"thread\">", postNum)
 
-	m2, _ := regexp.Compile(`/\w/res.+#`)
+	//m2, _ := regexp.Compile(`/\w/res.+#`)
 
 	var wg sync.WaitGroup
 
+	var postsArray []Post
 	for i := 0; i < threadInfo.Posts_Count; i++ {
 		postNum = threadInfo.Threads[0].Posts[i].Num
 		postText = threadInfo.Threads[0].Posts[i].Comment
-		postText = m2.ReplaceAllString(postText, fmt.Sprintf("%s/%d.html#", path, threadNum))
-		datetime := timestampToDatetime(threadInfo.Threads[0].Posts[i].Timestamp)
-
+		//postText = m2.ReplaceAllString(postText, fmt.Sprintf("%s/%d.html#", path, threadNum))
+		rPostNum := threadInfo.Threads[0].Posts[i].Number
+		timestamp := threadInfo.Threads[0].Posts[i].Timestamp
+		date := threadInfo.Threads[0].Posts[i].Date
+		subject := threadInfo.Threads[0].Posts[i].Subject
+		name := threadInfo.Threads[0].Posts[i].Name
+		//datetime := timestampToDatetime(timestamp)
 		files := threadInfo.Threads[0].Posts[i].Files
+
+		var withImg int
+		if len(files) != 0 {
+			withImg = 1
+		} else {
+			withImg = 0
+		}
+
+		postsArray = append(postsArray, Post{
+			WithImg:   withImg,
+			Name:      name,
+			Subject:   subject,
+			Date:      date,
+			Num:       postNum,
+			Number:    rPostNum,
+			Comment:   postText,
+			Timestamp: timestamp,
+			Files:     files,
+		})
 
 		filesNum := uint64(len(files))
 		if filesNum != 0 {
@@ -168,23 +205,37 @@ func main() {
 				go func() {
 					ok := false
 					for !ok {
-						ok = downloadFile(fmt.Sprintf("%s/%s", path, files[j].FullName), fmt.Sprintf("http://2ch.hk%s", files[j].Path))
+						ok = downloadFile(fmt.Sprintf("%s/%s", path, files[j].Name), fmt.Sprintf("http://2ch.hk%s", files[j].Path))
 					}
 					defer wg.Done()
 				}()
 			}
 		}
 
-		if i == 0 {
-			htmlFile += renderPostHtml("thread__oppost", postNum, datetime.Date, datetime.Time, postNum, postNum, postText)
-
-		} else {
-			htmlFile += renderPostHtml("thread__post", postNum, datetime.Date, datetime.Time, postNum, postNum, postText)
+		data := ViewData{
+			RootPath: rootPath,
+			Posts:    postsArray,
 		}
+		tmpl, _ := template.ParseFiles("index.html")
+		f, _ := os.Create("parsed.html")
+
+		tmpl.Execute(f, data)
+		f.Close()
+
+		pathToFolder := fmt.Sprintf("%s/%d.html", path, threadNum)
+		fmt.Println(pathToFolder)
+		f, _ = os.Create(pathToFolder)
+		tmpl.Execute(f, data)
+		f.Close()
+		//if i == 0 {
+		//	htmlFile += renderPostHtml("thread__oppost", postNum, datetime.Date, datetime.Time, postNum, postNum, postText)
+		//
+		//} else {
+		//	htmlFile += renderPostHtml("thread__post", postNum, datetime.Date, datetime.Time, postNum, postNum, postText)
+		//}
 	}
-	htmlFile += "</div></body></html>"
 
 	fmt.Println(path)
-	ioutil.WriteFile(fmt.Sprintf("threads/thread_%d/%d.html", threadNum, threadNum), []byte(htmlFile), 0600)
 	wg.Wait()
+	defer log.Printf("elapsed time: %s", time.Since(start))
 }

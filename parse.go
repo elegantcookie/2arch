@@ -32,7 +32,7 @@ func logAndSkipError(err error) {
 	f, _ := os.OpenFile("logs.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	defer f.Close()
 	log.SetOutput(f)
-	log.Printf("Skipped image: %s", err.Error())
+	log.Printf("Skipped file: %s reload started...", err.Error())
 }
 
 func parse(url string) (*http.Response, error) {
