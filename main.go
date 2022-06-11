@@ -98,7 +98,7 @@ func renderPostHtml(postClassName string, args ...interface{}) string {
 }
 
 func main() {
-	htmlUrl := "https://2ch.hk/b/res/269320621.html"
+	htmlUrl := "https://2ch.hk/b/res/269314054.html"
 
 	matched, err := matchCase(htmlUrl)
 	handleError(err)
@@ -166,7 +166,10 @@ func main() {
 				wg.Add(1)
 				j := j
 				go func() {
-					downloadFile(fmt.Sprintf("%s/%s", path, files[j].FullName), fmt.Sprintf("http://2ch.hk%s", files[j].Path))
+					ok := false
+					for !ok {
+						ok = downloadFile(fmt.Sprintf("%s/%s", path, files[j].FullName), fmt.Sprintf("http://2ch.hk%s", files[j].Path))
+					}
 					defer wg.Done()
 				}()
 			}

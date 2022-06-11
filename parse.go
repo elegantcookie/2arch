@@ -41,15 +41,15 @@ func parse(url string) (*http.Response, error) {
 	return res, handleRequestError(res, err)
 }
 
-func downloadFile(filePath string, url string) {
-	if _, err := os.Stat(filePath); err == nil {
-		return
-	}
+func downloadFile(filePath string, url string) bool {
+	//if _, err := os.Stat(filePath); err == nil {
+	//	return false
+	//}
 
 	output, err := os.Create(filePath)
 	if err != nil {
 		logAndSkipError(err)
-		return
+		return false
 	}
 	defer output.Close()
 
@@ -61,7 +61,7 @@ func downloadFile(filePath string, url string) {
 	response, err := client.Do(req)
 	if err != nil {
 		logAndSkipError(err)
-		return
+		return false
 	}
 	defer response.Body.Close()
 	_, err = io.Copy(output, response.Body)
@@ -69,7 +69,8 @@ func downloadFile(filePath string, url string) {
 	if err != nil {
 		fmt.Println(ioutil.ReadAll(response.Body))
 		logAndSkipError(err)
-		return
+		return false
 	}
+	return true
 
 }
