@@ -7,14 +7,30 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sync"
 )
+
+type PostFile struct {
+	DisplayName string
+	FullName    string
+	Path        string
+	Size        int
+	Thumbnail   string
+	Tn_Height   int
+	Tn_Width    int
+}
+
+//
+//type PostFiles struct {
+//	Files []PostFile
+//}
 
 type Post struct {
 	Num       int
 	Name      string
 	Timestamp int
 	Comment   string
-	Files     interface{}
+	Files     []PostFile
 }
 
 type PostsArray struct {
@@ -53,6 +69,15 @@ func matchCase(url string) (bool, error) {
 
 }
 
+func isMatch(str string, expr string) bool {
+	matched, _ := regexp.Match(expr, []byte(str))
+	if matched {
+		return true
+	} else {
+		return false
+	}
+}
+
 func handleError(error error) error {
 	if error != nil {
 		panic(error.Error())
@@ -65,7 +90,7 @@ func renderPostHtml(postClassName string, args ...interface{}) string {
 	postHtml := fmt.Sprintf("<div id=\"thread-%d\" class=\""+
 		postClassName+
 		"\">"+
-		"<p>%s %s <a href=\"%s/res/#%d.html\">№%d</a>"+
+		"<p>%s %s <a href=\"#%d\">№%d</a>"+
 		"</p>"+
 		"<p>%s</p>"+
 		"</div><br>", args...)
@@ -73,7 +98,7 @@ func renderPostHtml(postClassName string, args ...interface{}) string {
 }
 
 func main() {
-	htmlUrl := "https://2ch.hk/b/res/269302216.html"
+	htmlUrl := "https://2ch.hk/b/res/269321799.html"
 
 	matched, err := matchCase(htmlUrl)
 	handleError(err)
@@ -105,26 +130,57 @@ func main() {
 	postNum := threadInfo.Threads[0].Posts[0].Num
 	postText := threadInfo.Threads[0].Posts[0].Comment
 
+	rootPath, _ := os.Getwd()
+
+	threadNum := threadInfo.Threads[0].Posts[0].Num
+	path := filepath.Join(rootPath, fmt.Sprintf("/threads/thread_%d/", threadNum))
+
+	os.MkdirAll(path, os.ModePerm)
+
 	// THERE MUST BE A TEMPLATE ENGINE
 	htmlFile := fmt.Sprintf("<!DOCTYPE html><html><head>2ch-archiver</head><body><h1>Start of file</h1><div id=\"thread-%d\" class=\"thread\">", postNum)
+
+	m2, _ := regexp.Compile(`/\w/res.+#`)
+
+	var wg sync.WaitGroup
 
 	for i := 0; i < threadInfo.Posts_Count; i++ {
 		postNum = threadInfo.Threads[0].Posts[i].Num
 		postText = threadInfo.Threads[0].Posts[i].Comment
+		postText = m2.ReplaceAllString(postText, fmt.Sprintf("%s/%d.html#", path, threadNum))
 		datetime := timestampToDatetime(threadInfo.Threads[0].Posts[i].Timestamp)
 
+		files := threadInfo.Threads[0].Posts[i].Files
+
+		filesNum := uint64(len(files))
+		if filesNum != 0 {
+			for j := range files {
+				fmt.Println(j)
+				fmt.Println(files[j].Path)
+				fmt.Println(fmt.Sprintf("2ch.hk/%s", files[j].Path))
+
+				if isMatch(files[j].Path, "sticker") {
+					break
+				}
+
+				wg.Add(1)
+				go func() {
+					downloadFile(fmt.Sprintf("%s/%s", path, files[j].FullName), fmt.Sprintf("http://2ch.hk%s", files[j].Path))
+					defer wg.Done()
+				}()
+			}
+		}
+
 		if i == 0 {
-			htmlFile += renderPostHtml("thread__oppost", postNum, datetime.Date, datetime.Time, threadInfo.Board, postNum, postNum, postText)
+			htmlFile += renderPostHtml("thread__oppost", postNum, datetime.Date, datetime.Time, postNum, postNum, postText)
 
 		} else {
-			htmlFile += renderPostHtml("thread__post", postNum, datetime.Date, datetime.Time, threadInfo.Board, postNum, postNum, postText)
+			htmlFile += renderPostHtml("thread__post", postNum, datetime.Date, datetime.Time, postNum, postNum, postText)
 		}
 	}
 	htmlFile += "</div></body></html>"
-	threadNum := threadInfo.Threads[0].Posts[0].Num
-	rootPath, _ := os.Getwd()
-	fmt.Println(rootPath)
-	path := filepath.Join(rootPath, fmt.Sprintf("/threads/thread_%d", threadNum))
-	os.Mkdir(path, os.ModePerm)
+
+	fmt.Println(path)
 	ioutil.WriteFile(fmt.Sprintf("threads/thread_%d/%d.html", threadNum, threadNum), []byte(htmlFile), 0600)
+	wg.Wait()
 }
