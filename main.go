@@ -19,14 +19,21 @@ type ViewData struct {
 }
 
 type PostFile struct {
-	Name        string
-	DisplayName string
-	FullName    string
-	Path        string
-	Size        int
-	Thumbnail   string
-	Tn_Height   int
-	Tn_Width    int
+	Name               string
+	DisplayName        string
+	Duration           string
+	FullName           string
+	Path               string
+	LocalPath          string
+	LocalThumbnailPath string
+	Md5                string
+	Size               int
+	Type               int
+	Thumbnail          string
+	Height             int
+	Width              int
+	Tn_Height          int
+	Tn_Width           int
 }
 
 //
@@ -42,7 +49,7 @@ type Post struct {
 	Number    int
 	Timestamp int
 	Comment   string
-	WithImg   int
+	ImgAmount int
 	Files     []PostFile
 }
 
@@ -111,7 +118,7 @@ func renderPostHtml(postClassName string, args ...interface{}) string {
 }
 
 func main() {
-	htmlUrl := "https://2ch.hk/b/res/269379200.html"
+	htmlUrl := "https://2ch.hk/b/res/269540669.html"
 
 	start := time.Now()
 	matched, err := matchCase(htmlUrl)
@@ -125,6 +132,7 @@ func main() {
 	}
 
 	m1 := regexp.MustCompile(`html`)
+	m2 := regexp.MustCompile(`\..+`)
 
 	jsonUrl := m1.ReplaceAllString(htmlUrl, "json")
 
@@ -147,13 +155,10 @@ func main() {
 	rootPath, _ := os.Getwd()
 
 	threadNum := threadInfo.Threads[0].Posts[0].Num
-	path := filepath.Join(rootPath, fmt.Sprintf("/threads/thread_%d/", threadNum))
+	filesPath := filepath.Join(rootPath, fmt.Sprintf("/threads/thread_%d/files", threadNum))
+	htmlFilePath := filepath.Join(rootPath, fmt.Sprintf("/threads/thread_%d", threadNum))
 
-	os.MkdirAll(path, os.ModePerm)
-
-	// THERE MUST BE A TEMPLATE ENGINE
-
-	//m2, _ := regexp.Compile(`/\w/res.+#`)
+	os.MkdirAll(filesPath, os.ModePerm)
 
 	var wg sync.WaitGroup
 
@@ -161,24 +166,29 @@ func main() {
 	for i := 0; i < threadInfo.Posts_Count; i++ {
 		postNum = threadInfo.Threads[0].Posts[i].Num
 		postText = threadInfo.Threads[0].Posts[i].Comment
-		//postText = m2.ReplaceAllString(postText, fmt.Sprintf("%s/%d.html#", path, threadNum))
 		rPostNum := threadInfo.Threads[0].Posts[i].Number
 		timestamp := threadInfo.Threads[0].Posts[i].Timestamp
 		date := threadInfo.Threads[0].Posts[i].Date
 		subject := threadInfo.Threads[0].Posts[i].Subject
 		name := threadInfo.Threads[0].Posts[i].Name
-		//datetime := timestampToDatetime(timestamp)
 		files := threadInfo.Threads[0].Posts[i].Files
+		for k := range files {
+			files[k].LocalPath = fmt.Sprintf("files/%s", files[k].Name)
+			thumbnailUrl := m2.ReplaceAllString(files[k].Name, ".jpg")
+			files[k].LocalThumbnailPath = fmt.Sprintf("files/%s", thumbnailUrl)
+			//fmt.Printf("thumbnail url: %s\n", files[k].Thumbnail)
+			//fmt.Printf("local thumbnail url: %s\n", files[k].LocalThumbnailPath)
+		}
 
-		var withImg int
+		var imgAmount int
 		if len(files) != 0 {
-			withImg = 1
+			imgAmount = len(files)
 		} else {
-			withImg = 0
+			imgAmount = 0
 		}
 
 		postsArray = append(postsArray, Post{
-			WithImg:   withImg,
+			ImgAmount: imgAmount,
 			Name:      name,
 			Subject:   subject,
 			Date:      date,
@@ -205,7 +215,20 @@ func main() {
 				go func() {
 					ok := false
 					for !ok {
-						ok = downloadFile(fmt.Sprintf("%s/%s", path, files[j].Name), fmt.Sprintf("http://2ch.hk%s", files[j].Path))
+						if files[j].Type == 10 {
+							for !ok {
+								thumbnailUrl := m2.ReplaceAllString(files[j].Name, ".jpg")
+								_localPath := fmt.Sprintf("%s/%s", filesPath, thumbnailUrl)
+								_webPath := fmt.Sprintf("http://2ch.hk%s", files[j].Thumbnail)
+								//fmt.Printf("localPath: %s\nweb_path: %s\n", _localPath, _webPath)
+								ok = downloadFile(_localPath, _webPath)
+							}
+						}
+						ok = false
+						_localPath := fmt.Sprintf("%s/%s", filesPath, files[j].Name)
+						_webPath := fmt.Sprintf("http://2ch.hk%s", files[j].Path)
+						//fmt.Printf("localPath: %s\nweb_path: %s\n", _localPath, _webPath)
+						ok = downloadFile(_localPath, _webPath)
 					}
 					defer wg.Done()
 				}()
@@ -222,20 +245,15 @@ func main() {
 		tmpl.Execute(f, data)
 		f.Close()
 
-		pathToFolder := fmt.Sprintf("%s/%d.html", path, threadNum)
-		fmt.Println(pathToFolder)
+		pathToFolder := fmt.Sprintf("%s/%d.html", htmlFilePath, threadNum)
+		//fmt.Println(pathToFolder)
 		f, _ = os.Create(pathToFolder)
 		tmpl.Execute(f, data)
 		f.Close()
-		//if i == 0 {
-		//	htmlFile += renderPostHtml("thread__oppost", postNum, datetime.Date, datetime.Time, postNum, postNum, postText)
-		//
-		//} else {
-		//	htmlFile += renderPostHtml("thread__post", postNum, datetime.Date, datetime.Time, postNum, postNum, postText)
-		//}
+
 	}
 
-	fmt.Println(path)
+	fmt.Println(htmlFilePath)
 	wg.Wait()
 	defer log.Printf("elapsed time: %s", time.Since(start))
 }
