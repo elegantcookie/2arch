@@ -108,12 +108,6 @@ func handleError(error error) error {
 	return nil
 }
 
-/*
-if isToJson {
-
-	}
-*/
-
 func downloadJson(htmlUrl string) {
 	start := time.Now()
 	matched, err := matchCase(htmlUrl)
@@ -185,7 +179,6 @@ func downloadJson(htmlUrl string) {
 }
 
 func downloadHtml(htmlUrl string) {
-	//htmlUrl := "https://2ch.hk/po/res/46440864.html"
 
 	start := time.Now()
 	matched, err := matchCase(htmlUrl)
