@@ -1,5 +1,5 @@
 # Архиватор 2ch.hk
-Может скачивать тред в html и json
+Может скачивать тред в html и json.
 
 # Установка и запуск
  
@@ -32,6 +32,11 @@ cd 2arch
 ```
 2arch -u https://2ch.hk/abu/res/42375.html -j
 ```
+
+<b>Треды сохраняются в папку threads</b>
+
+![image](https://user-images.githubusercontent.com/68335351/174891017-fd000fae-830d-43da-a6ef-35efe12c25c6.png)
+
 
 # Использованные библиотеки
 cobra, json, io, net, os, regexpr, sync, time и другие...
