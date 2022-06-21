@@ -35,7 +35,7 @@ cd 2arch
 
 <b>Треды сохраняются в папку threads</b>
 
-![image](https://user-images.githubusercontent.com/68335351/174891017-fd000fae-830d-43da-a6ef-35efe12c25c6.png)
+![image](https://user-images.githubusercontent.com/68335351/174891350-782cc811-32db-4f2d-8025-8308f693bb95.png)
 
 
 # Использованные библиотеки
