@@ -30,7 +30,7 @@ cd 2arch
 
 <b>Скачиваем файл в json</b>
 ```
-2arch -u https://2ch.hk/abu/res/42375.html
+2arch -u https://2ch.hk/abu/res/42375.html -j
 ```
 
 # Использованные библиотеки
