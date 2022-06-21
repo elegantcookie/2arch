@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -41,12 +41,21 @@ func parse(url string) (*http.Response, error) {
 	return res, handleRequestError(res, err)
 }
 
+func createFile(filePath string) (*os.File, error) {
+	output, err := os.Create(filePath)
+	if err != nil {
+		logAndSkipError(err)
+		return output, err
+	}
+	return output, nil
+}
+
 func downloadFile(filePath string, url string) bool {
 	//if _, err := os.Stat(filePath); err == nil {
 	//	return false
 	//}
 
-	output, err := os.Create(filePath)
+	output, err := createFile(filePath)
 	if err != nil {
 		logAndSkipError(err)
 		return false
