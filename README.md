@@ -1,16 +1,11 @@
 # Архиватор 2ch.hk
 Может скачивать тред в html и json
 
-# Установка
-
+# Установка и запуск
+ 
 ```
 git clone https://github.com/elegantcookie/2arch.git
 cd 2arch
-```
-
-# Запуск
-
-```
 2arch --help
 ```
 
