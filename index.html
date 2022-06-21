@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ .RootPath}}/makaba.css">
+    <title>Title</title>
+</head>
+<body>
+    {{range .Posts}}
+    {{ $postNum := .Num }}
+    {{ $postNumber := .Number }}
+    <div id="post-{{ .Num }}" class="{{if eq .Number 1 }}thread__oppost{{else}}thread__post{{end}}">
+        {{ if ge .ImgAmount 1 }}
+        <div class="{{if eq $postNumber 1 }}post post_type_oppost{{else}}post post_type_reply post_withimg {{end}}" id="post-body-{{ .Num }}" data-num="{{ .Num }}">
+            <div class="post__details" id="post-details-{{ .Num }}">
+                <span class="post__detailpart">
+
+                    <span class="post__anon">{{ .Name }}</span>
+                    <span class="post__time">{{ .Date }}</span>
+                </span>
+                <span class="post__detailpart">
+                    <a href="/{{ .Num }}.html#{{ .Num }}" class="postbtn-reply-href post__reflink" data-num="{{ .Num }}">№{{ .Num }}</a>
+                    <span class="post__number">{{ .Number }}</span>
+                </span>
+            </div>
+            {{ if eq .ImgAmount 1 }}
+            <div class="post__images post__images_type_single ">
+            {{else}}<div class="post__images  post__images_type_multi">{{end}}
+                {{range .Files}}
+                <figure class="post__image">
+                    <figcaption class="post__file-attr">
+                        <a class="desktop" target="_blank" href="{{ .LocalPath }}" title="{{ .DisplayName }}">{{ .DisplayName }}</a>
+                        <span class="post__filezise">{{ .Size }}Кб, {{ .Width }}x{{ .Height }}{{ if .Duration }}, {{ .Duration }}{{end}}</span>
+                    </figcaption>
+                    <a href="{{ .LocalPath }}" class="post__image-link" target="_blank" onclick="return false;">
+                        <img src="{{ if eq .Type 10 }}{{ .LocalThumbnailPath }}{{else}}{{ .LocalPath }}{{end}}" width="{{ .Tn_Width }}" height="{{ .Tn_Height }}" alt="{{ .Width }}x{{ .Height }}"
+                             id="img-{{ $postNum }}-{{ .Md5 }}" class="{{if eq .Type 10}}post__file-preview  post__file-webm {{else}}post__file-preview  {{end}}" data-type="{{ .Type }}" data-title="6862602062699742213.mp4" data-width="{{ .Width }}" data-height="{{ .Height }}" data-md5="{{ $postNum }}-{{ .Md5 }}" data-src="{{ .LocalPath }}"><!-- loading="lazy" -->
+                    </a>
+                </figure>
+                {{end}}
+            </div>
+            <article id="m{{ .Num }}" class="{{if eq $postNumber 1}}post__message post__message_op{{else}}post__message {{end}}">{{ .Comment }}</article>
+        </div>
+        {{else}}
+        <div class="post post_type_reply  " id="post-body-{{ .Num }}" data-num="{{ .Num }}">
+            <div class="post__details" id="post-details-{{ .Num }}">
+                    <span class="post__detailpart">
+
+                        <span class="post__anon">{{ .Name }}</span>
+                        <span class="post__time">{{ .Date }}</span>
+                    </span>
+                <span class="post__detailpart">
+                        <a href="№{{ .Num }}.html#{{ .Num }}" class="postbtn-reply-href post__reflink" data-num="{{ .Num }}">№{{ .Num }}</a>
+                        <span class="post__number">{{ .Number }}</span>
+                    </span>
+            </div>
+            <article id="m{{ .Num }}" class="{{if eq $postNumber 1}}post__message post__message_op{{else}}post__message {{end}}">{{ .Comment }}</article>
+        </div>
+        {{end}}
+    </div>
+   {{end}}
+</body>
+</html>

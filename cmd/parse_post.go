@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -32,7 +32,7 @@ func logAndSkipError(err error) {
 	f, _ := os.OpenFile("logs.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	defer f.Close()
 	log.SetOutput(f)
-	log.Printf("Skipped image: %s", err.Error())
+	log.Printf("Skipped file: %s reload started...", err.Error())
 }
 
 func parse(url string) (*http.Response, error) {
@@ -41,12 +41,21 @@ func parse(url string) (*http.Response, error) {
 	return res, handleRequestError(res, err)
 }
 
+func createFile(filePath string) (*os.File, error) {
+	output, err := os.Create(filePath)
+	if err != nil {
+		logAndSkipError(err)
+		return output, err
+	}
+	return output, nil
+}
+
 func downloadFile(filePath string, url string) bool {
 	//if _, err := os.Stat(filePath); err == nil {
 	//	return false
 	//}
 
-	output, err := os.Create(filePath)
+	output, err := createFile(filePath)
 	if err != nil {
 		logAndSkipError(err)
 		return false
