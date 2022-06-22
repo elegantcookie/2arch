@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/2ch_archiver.iml" filepath="$PROJECT_DIR$/.idea/2ch_archiver.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/2arch.iml" filepath="$PROJECT_DIR$/.idea/2arch.iml" />
     </modules>
   </component>
 </project>
