@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -33,6 +32,13 @@ func logAndSkipError(err error) {
 	defer f.Close()
 	log.SetOutput(f)
 	log.Printf("Skipped file: %s reload started...", err.Error())
+}
+
+func logMessage(message string) {
+	f, _ := os.OpenFile("logs.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	defer f.Close()
+	log.SetOutput(f)
+	log.Println(message)
 }
 
 func parse(url string) (*http.Response, error) {
@@ -76,7 +82,6 @@ func downloadFile(filePath string, url string) bool {
 	_, err = io.Copy(output, response.Body)
 
 	if err != nil {
-		fmt.Println(ioutil.ReadAll(response.Body))
 		logAndSkipError(err)
 		return false
 	}

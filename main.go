@@ -1,6 +1,8 @@
 package main
 
-import "2ch-archiver/cmd"
+import (
+	"2arch/cmd"
+)
 
 func main() {
 	cmd.Execute()

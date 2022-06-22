@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cheggaaa/pb/v3"
 	"io"
 	"io/ioutil"
 	"log"
@@ -114,9 +115,9 @@ func downloadJson(htmlUrl string) {
 	handleError(err)
 
 	if matched {
-		fmt.Println("Good url")
+		logMessage("Good url")
 	} else {
-		fmt.Println("Wrong url")
+		logMessage("Wrong url")
 		return
 	}
 
@@ -175,7 +176,8 @@ func downloadJson(htmlUrl string) {
 	}
 
 	wg.Wait()
-	defer log.Printf("elapsed time: %s", time.Since(start))
+	defer log.Println(fmt.Sprintf("Тред №%d скачан за: %s", threadNum, time.Since(start)))
+
 }
 
 func downloadHtml(htmlUrl string) {
@@ -185,9 +187,9 @@ func downloadHtml(htmlUrl string) {
 	handleError(err)
 
 	if matched {
-		fmt.Println("Good url")
+		logMessage("Good url")
 	} else {
-		fmt.Println("Wrong url")
+		logMessage("Wrong url")
 		return
 	}
 
@@ -226,6 +228,8 @@ func downloadHtml(htmlUrl string) {
 	var wg sync.WaitGroup
 
 	var postsArray []Post
+
+	bar := pb.StartNew(0)
 	for i := 0; i < threadInfo.Posts_Count; i++ {
 		postNum = threadInfo.Threads[0].Posts[i].Num
 		postText = threadInfo.Threads[0].Posts[i].Comment
@@ -242,8 +246,6 @@ func downloadHtml(htmlUrl string) {
 			files[k].LocalPath = fmt.Sprintf("files/%s", files[k].Name)
 			thumbnailUrl := m2.ReplaceAllString(files[k].Name, ".jpg")
 			files[k].LocalThumbnailPath = fmt.Sprintf("files/thumbnails/%s", thumbnailUrl)
-			//fmt.Printf("thumbnail url: %s\n", files[k].Thumbnail)
-			//fmt.Printf("local thumbnail url: %s\n", files[k].LocalThumbnailPath)
 		}
 
 		var imgAmount int
@@ -266,11 +268,10 @@ func downloadHtml(htmlUrl string) {
 		})
 
 		filesNum := uint64(len(files))
+		bar.AddTotal(int64(filesNum))
 		if filesNum != 0 {
 			for j := range files {
-				fmt.Println(j)
-				fmt.Println(files[j].Path)
-				fmt.Println(fmt.Sprintf("2ch.hk/%s", files[j].Path))
+				logMessage(fmt.Sprintf("download started for 2ch.hk/%s", files[j].Path))
 
 				if isMatch(files[j].Path, "sticker") {
 					continue
@@ -286,16 +287,15 @@ func downloadHtml(htmlUrl string) {
 								thumbnailUrl := m2.ReplaceAllString(files[j].Name, ".jpg")
 								_localPath := fmt.Sprintf("%s/thumbnails/%s", filesPath, thumbnailUrl)
 								_webPath := fmt.Sprintf("http://2ch.hk%s", files[j].Thumbnail)
-								//fmt.Printf("localPath: %s\nweb_path: %s\n", _localPath, _webPath)
 								ok = downloadFile(_localPath, _webPath)
 							}
 						}
 						ok = false
 						_localPath := fmt.Sprintf("%s/%s", filesPath, files[j].Name)
 						_webPath := fmt.Sprintf("http://2ch.hk%s", files[j].Path)
-						//fmt.Printf("localPath: %s\nweb_path: %s\n", _localPath, _webPath)
 						ok = downloadFile(_localPath, _webPath)
 					}
+					defer bar.Increment()
 					defer wg.Done()
 				}()
 			}
@@ -306,19 +306,15 @@ func downloadHtml(htmlUrl string) {
 			Posts:    postsArray,
 		}
 		tmpl, _ := template.ParseFiles("index.html")
-		f, _ := os.Create("parsed.html")
 
-		tmpl.Execute(f, data)
-		f.Close()
 		pathToFolder := fmt.Sprintf("%s/%d.html", htmlFilePath, threadNum)
-		//fmt.Println(pathToFolder)
-		f, _ = os.Create(pathToFolder)
+		f, _ := os.Create(pathToFolder)
 		tmpl.Execute(f, data)
 		f.Close()
 
 	}
-
-	fmt.Println(htmlFilePath)
+	logMessage(fmt.Sprintf("files saved at %s", htmlFilePath))
 	wg.Wait()
-	defer log.Printf("elapsed time: %s", time.Since(start))
+	bar.Finish()
+	defer log.Println(fmt.Sprintf("Тред №%d скачан за: %s", threadNum, time.Since(start)))
 }
