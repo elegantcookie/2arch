@@ -6,7 +6,8 @@
 ```
 git clone https://github.com/elegantcookie/2arch.git
 cd 2arch
-2arch --help
+go build 2arch
+2arch.exe --help
 ```
 
 # Команды
