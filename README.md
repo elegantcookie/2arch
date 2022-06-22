@@ -3,13 +3,18 @@
 
 # Установка и запуск
  
- <b>Установка с </b>
+ <b>Установка с github</b>
 ```
 git clone https://github.com/elegantcookie/2arch.git
 cd 2arch
 go build 2arch
 ```
 
+<b>Установка из релизов</b>
+
+Скачать, разархивировать папку
+
+<b>Запуск</b>
 ```
 2arch.exe --help
 ```
@@ -18,24 +23,24 @@ go build 2arch
 <b>Скачивание треда в html</b> 
 
 ```
-2arch --url [ссылка на тред]
-2arch --u [ссылка на тред]
+2arch.exe --url [ссылка на тред]
+2arch.exe --u [ссылка на тред]
 ```
 
 <b>Скачивание треда в json</b>
 ```
-2arch --url [ссылка на тред] --json
-2arch -u [ссылка на тред] -j
+2arch.exe --url [ссылка на тред] --json
+2arch.exe -u [ссылка на тред] -j
 ```
 # Примеры использования
 <b>Скачиваем файл в html</b>
 ```
-2arch -u https://2ch.hk/abu/res/42375.html
+2arch.exe -u https://2ch.hk/abu/res/42375.html
 ```
 
 <b>Скачиваем файл в json</b>
 ```
-2arch -u https://2ch.hk/abu/res/42375.html -j
+2arch.exe -u https://2ch.hk/abu/res/42375.html -j
 ```
 
 <b>Треды сохраняются в папку threads</b>
