@@ -3,10 +3,14 @@
 
 # Установка и запуск
  
+ <b>Установка с </b>
 ```
 git clone https://github.com/elegantcookie/2arch.git
 cd 2arch
 go build 2arch
+```
+
+```
 2arch.exe --help
 ```
 
