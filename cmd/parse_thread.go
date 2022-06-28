@@ -16,6 +16,16 @@ import (
 	"time"
 )
 
+// SimplifiedFile - упрощенная структура PostFile, чтобы хранить массив меньшего объема
+type SimplifiedFile struct {
+	Filename string
+	Size     int
+	Type     int
+	Height   int
+	Width    int
+}
+
+// ViewData - данные для заполнения шаблона
 type ViewData struct {
 	RootPath string
 	Posts    []Post
@@ -37,12 +47,8 @@ type PostFile struct {
 	Width              int
 	Tn_Height          int
 	Tn_Width           int
+	IsVideo            bool
 }
-
-//
-//type PostFiles struct {
-//	Files []PostFile
-//}
 
 type Post struct {
 	Name      string
@@ -72,12 +78,13 @@ type UrlMatchError struct {
 }
 
 func (matchError *UrlMatchError) Error() string {
-	if matchError.error != nil {
-		return matchError.error.Error()
+	if len(matchError.url) == 0 {
+		return fmt.Sprint("не указан адрес треда")
 	}
-	return fmt.Sprintf("Wrong url: %s\n", matchError.url)
+	return fmt.Sprint("некорректно указан адрес треда")
 }
 
+// Проверка ссылки на тред на корректность
 func matchCase(url string) (bool, error) {
 	exrp := "https?:\\/\\/2ch\\.(hk|life)\\/\\w+\\/res\\/\\d+\\.html"
 	matched, err := regexp.Match(exrp, []byte(url))
@@ -92,6 +99,7 @@ func matchCase(url string) (bool, error) {
 
 }
 
+// Проверка строки str на соответствие рег выражению expr
 func isMatch(str string, expr string) bool {
 	matched, _ := regexp.Match(expr, []byte(str))
 	if matched {
@@ -101,16 +109,22 @@ func isMatch(str string, expr string) bool {
 	}
 }
 
+// Простой обработчик ошибок
 func handleError(error error) error {
 	if error != nil {
-		panic(error.Error())
-
+		fmt.Printf("Произошла ошибка: %s", error.Error())
+		os.Exit(-1)
 	}
 	return nil
 }
 
-func downloadJson(htmlUrl string) {
-	start := time.Now()
+type Thread struct {
+	threadInfo ThreadInfo
+	rootPath   string
+}
+
+// Проверяет ссылку на тред, если она действительна, то возвращает структуру треда
+func setupThread(htmlUrl string) *Thread {
 	matched, err := matchCase(htmlUrl)
 	handleError(err)
 
@@ -118,7 +132,7 @@ func downloadJson(htmlUrl string) {
 		logMessage("Good url")
 	} else {
 		logMessage("Wrong url")
-		return
+		handleError(fmt.Errorf("wrong url"))
 	}
 
 	m1 := regexp.MustCompile(`html`) // html url -> json url
@@ -134,14 +148,42 @@ func downloadJson(htmlUrl string) {
 	handleError(err)
 
 	var threadInfo ThreadInfo
-
 	err = json.Unmarshal(body, &threadInfo)
 	handleError(err)
+
+	rootPath, _ := os.Getwd()
+
+	return &Thread{
+		threadInfo: threadInfo,
+		rootPath:   rootPath,
+	}
+}
+
+func isVideo(fileType int) bool {
+	if fileType == 10 || fileType == 6 {
+		return true
+	}
+	return false
+}
+
+func isImage(fileType int) bool {
+	if fileType == 1 || fileType == 2 {
+		return true
+	}
+	return false
+}
+
+// Скачивает страницу и создает json файл с текстом ответов
+func downloadJson(htmlUrl string) {
+	start := time.Now()
+
+	thread := setupThread(htmlUrl)
+	threadInfo := thread.threadInfo
+	rootPath := thread.rootPath
 
 	postNum := threadInfo.Threads[0].Posts[0].Num
 	postText := threadInfo.Threads[0].Posts[0].Comment
 
-	rootPath, _ := os.Getwd()
 	threadNum := threadInfo.Threads[0].Posts[0].Num
 	filesPath := filepath.Join(rootPath, fmt.Sprintf("/threads/thread_%d/", threadNum))
 
@@ -180,42 +222,22 @@ func downloadJson(htmlUrl string) {
 
 }
 
-func downloadHtml(htmlUrl string) {
-
+// Скачивает страницу и заполняет её шаблон
+func downloadHtml(htmlUrl string, flags Flags) {
 	start := time.Now()
-	matched, err := matchCase(htmlUrl)
-	handleError(err)
 
-	if matched {
-		logMessage("Good url")
-	} else {
-		logMessage("Wrong url")
-		return
-	}
-
-	m1 := regexp.MustCompile(`html`) // html url -> json url
 	m2 := regexp.MustCompile(`\..+`) // thumbnail url -> thumbnail.jpg
 	m3 := regexp.MustCompile("/\\w+/\\w+/\\w+.\\w+#")
 
-	jsonUrl := m1.ReplaceAllString(htmlUrl, "json")
+	thread := setupThread(htmlUrl)
+	threadInfo := thread.threadInfo
+	rootPath := thread.rootPath
 
-	res, err := parse(jsonUrl)
-	handleError(err)
-
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	handleError(err)
-
-	var threadInfo ThreadInfo
-
-	err = json.Unmarshal(body, &threadInfo)
-	handleError(err)
+	var fileSet FileSet
+	var filenameSet FilenameSet
 
 	postNum := threadInfo.Threads[0].Posts[0].Num
 	postText := threadInfo.Threads[0].Posts[0].Comment
-
-	rootPath, _ := os.Getwd()
 
 	threadNum := threadInfo.Threads[0].Posts[0].Num
 
@@ -244,8 +266,9 @@ func downloadHtml(htmlUrl string) {
 
 		for k := range files {
 			files[k].LocalPath = fmt.Sprintf("files/%s", files[k].Name)
-			thumbnailUrl := m2.ReplaceAllString(files[k].Name, ".jpg")
+			thumbnailUrl := m2.ReplaceAllString(files[k].FullName, ".jpg")
 			files[k].LocalThumbnailPath = fmt.Sprintf("files/thumbnails/%s", thumbnailUrl)
+			files[k].IsVideo = isVideo(files[k].Type)
 		}
 
 		var imgAmount int
@@ -268,30 +291,82 @@ func downloadHtml(htmlUrl string) {
 		})
 
 		filesNum := uint64(len(files))
-		bar.AddTotal(int64(filesNum))
+
 		if filesNum != 0 {
 			for j := range files {
+				// Если скачиваются только изображения, то остальные файлы пропускаются
+				if flags.imagesOnly {
+					if !isImage(files[j].Type) {
+						continue
+					}
+				}
+
+				// Если скачиваются только видео, то остальные файлы пропускаются
+				if flags.videosOnly {
+					if !isVideo(files[j].Type) {
+						continue
+					}
+				}
+
+				sFile := SimplifiedFile{
+					Filename: files[j].FullName,
+					Size:     files[j].Size,
+					Type:     files[j].Type,
+					Height:   files[j].Height,
+					Width:    files[j].Width,
+				}
+
+				// Если файл во множестве fileSet, то у files[j] ссылка будет указывать на адрес этого файла
+				if foundFile := fileSet.Find(sFile); foundFile != nil {
+					filename := foundFile.Filename
+					if !strings.Contains(filename, ".") {
+						filename += ".jpg"
+					}
+					files[j].LocalPath = fmt.Sprintf("%s/%s", filesPath, filename)
+					continue
+				}
+
+				// Если у файла одинаковое имя с другими, но он уникальный, то ему присваивается случайное имя
+				if filenameSet.Contains(files[j].FullName) {
+					files[j].FullName = GenerateFilename()
+				}
+
+				// Обновление имени в структуре sFile
+				sFile.Filename = files[j].FullName
+
+				// Добавление нового элемента во множества
+				fileSet.Add(sFile)
+				filenameSet.Add(files[j].FullName)
+
+				bar.AddTotal(1)
+
 				logMessage(fmt.Sprintf("download started for 2ch.hk/%s", files[j].Path))
 
+				// Стикеры не скачиваются
 				if isMatch(files[j].Path, "sticker") {
 					continue
 				}
 
 				wg.Add(1)
 				j := j
+				// Нуждается в рефакторинге
 				go func() {
 					ok := false
 					for !ok {
-						if files[j].Type == 10 {
+						if isVideo(files[j].Type) {
+							// Скачивание превью для видео
 							for !ok {
-								thumbnailUrl := m2.ReplaceAllString(files[j].Name, ".jpg")
+								thumbnailUrl := m2.ReplaceAllString(files[j].FullName, ".jpg")
 								_localPath := fmt.Sprintf("%s/thumbnails/%s", filesPath, thumbnailUrl)
+
 								_webPath := fmt.Sprintf("http://2ch.hk%s", files[j].Thumbnail)
 								ok = downloadFile(_localPath, _webPath)
 							}
 						}
 						ok = false
-						_localPath := fmt.Sprintf("%s/%s", filesPath, files[j].Name)
+						_localPath := fmt.Sprintf("%s/%s", filesPath, files[j].FullName)
+						files[j].LocalPath = _localPath
+
 						_webPath := fmt.Sprintf("http://2ch.hk%s", files[j].Path)
 						ok = downloadFile(_localPath, _webPath)
 					}
@@ -316,5 +391,5 @@ func downloadHtml(htmlUrl string) {
 	logMessage(fmt.Sprintf("files saved at %s", htmlFilePath))
 	wg.Wait()
 	bar.Finish()
-	defer log.Println(fmt.Sprintf("Тред №%d скачан за: %s", threadNum, time.Since(start)))
+	defer logMessage(fmt.Sprintf("Тред №%d скачан за: %s", threadNum, time.Since(start)))
 }

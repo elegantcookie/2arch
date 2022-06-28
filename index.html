@@ -12,7 +12,7 @@
     <div id="post-{{ .Num }}" class="{{if eq .Number 1 }}thread__oppost{{else}}thread__post{{end}}">
         {{ if ge .ImgAmount 1 }}
         <div class="{{if eq $postNumber 1 }}post post_type_oppost{{else}}post post_type_reply post_withimg {{end}}" id="post-body-{{ .Num }}" data-num="{{ .Num }}">
-            <div class="post__details" id="post-details-{{ .Num }}">
+            <div class="post__details">
                 <span class="post__detailpart">
 
                     <span class="post__anon">{{ .Name }}</span>
@@ -33,7 +33,7 @@
                         <span class="post__filezise">{{ .Size }}Кб, {{ .Width }}x{{ .Height }}{{ if .Duration }}, {{ .Duration }}{{end}}</span>
                     </figcaption>
                     <a href="{{ .LocalPath }}" class="post__image-link" target="_blank" onclick="return false;">
-                        <img src="{{ if eq .Type 10 }}{{ .LocalThumbnailPath }}{{else}}{{ .LocalPath }}{{end}}" width="{{ .Tn_Width }}" height="{{ .Tn_Height }}" alt="{{ .Width }}x{{ .Height }}"
+                        <img src="{{ if eq .IsVideo true }}{{ .LocalThumbnailPath }}{{else}}{{ .LocalPath }}{{end}}" width="{{ .Tn_Width }}" height="{{ .Tn_Height }}" alt="{{ .Width }}x{{ .Height }}"
                              id="img-{{ $postNum }}-{{ .Md5 }}" class="{{if eq .Type 10}}post__file-preview  post__file-webm {{else}}post__file-preview  {{end}}" data-type="{{ .Type }}" data-title="6862602062699742213.mp4" data-width="{{ .Width }}" data-height="{{ .Height }}" data-md5="{{ $postNum }}-{{ .Md5 }}" data-src="{{ .LocalPath }}"><!-- loading="lazy" -->
                     </a>
                 </figure>
