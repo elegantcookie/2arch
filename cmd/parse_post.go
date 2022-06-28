@@ -43,10 +43,10 @@ func logMessage(message string) {
 
 func parse(url string) (*http.Response, error) {
 	res, err := http.Get(url)
-
 	return res, handleRequestError(res, err)
 }
 
+// Создаёт файл по пути filePath
 func createFile(filePath string) (*os.File, error) {
 	output, err := os.Create(filePath)
 	if err != nil {
@@ -57,10 +57,6 @@ func createFile(filePath string) (*os.File, error) {
 }
 
 func downloadFile(filePath string, url string) bool {
-	//if _, err := os.Stat(filePath); err == nil {
-	//	return false
-	//}
-
 	output, err := createFile(filePath)
 	if err != nil {
 		logAndSkipError(err)
