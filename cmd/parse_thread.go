@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"2arch/pkg/logging"
 	"encoding/json"
 	"fmt"
 	"github.com/cheggaaa/pb/v3"
@@ -86,7 +87,7 @@ func (matchError *UrlMatchError) Error() string {
 
 // Проверка ссылки на тред на корректность
 func matchCase(url string) (bool, error) {
-	exrp := "https?:\\/\\/2ch\\.(hk|life)\\/\\w+\\/res\\/\\d+\\.html"
+	exrp := "https?:\\/\\/2ch\\.hk\\/\\w+\\/res\\/\\d+\\.html"
 	matched, err := regexp.Match(exrp, []byte(url))
 	if err != nil {
 		return false, &UrlMatchError{url: url, error: err}
@@ -129,9 +130,9 @@ func setupThread(htmlUrl string) *Thread {
 	handleError(err)
 
 	if matched {
-		logMessage("Good url")
+		logging.LogMessage("Good url")
 	} else {
-		logMessage("Wrong url")
+		logging.LogMessage("Wrong url")
 		handleError(fmt.Errorf("wrong url"))
 	}
 
@@ -177,6 +178,9 @@ func isImage(fileType int) bool {
 func downloadJson(htmlUrl string) {
 	start := time.Now()
 
+	logger := logging.Init("logs.txt")
+	defer logger.Close()
+
 	thread := setupThread(htmlUrl)
 	threadInfo := thread.threadInfo
 	rootPath := thread.rootPath
@@ -213,18 +217,20 @@ func downloadJson(htmlUrl string) {
 	strMap := string(marshalledMap)
 	_, err = io.Copy(output, strings.NewReader(strMap))
 	if err != nil {
-		logAndSkipError(err)
+		logging.LogAndSkipError(err)
 		return
 	}
 
 	wg.Wait()
 	defer log.Println(fmt.Sprintf("Тред №%d скачан за: %s", threadNum, time.Since(start)))
-
 }
 
 // Скачивает страницу и заполняет её шаблон
 func downloadHtml(htmlUrl string, flags Flags) {
 	start := time.Now()
+
+	logger := logging.Init("logs.txt")
+	defer logger.Close()
 
 	m2 := regexp.MustCompile(`\..+`) // thumbnail url -> thumbnail.jpg
 	m3 := regexp.MustCompile("/\\w+/\\w+/\\w+.\\w+#")
@@ -340,7 +346,7 @@ func downloadHtml(htmlUrl string, flags Flags) {
 
 				bar.AddTotal(1)
 
-				logMessage(fmt.Sprintf("download started for 2ch.hk/%s", files[j].Path))
+				logging.LogMessage(fmt.Sprintf("download started for 2ch.hk/%s", files[j].Path))
 
 				// Стикеры не скачиваются
 				if isMatch(files[j].Path, "sticker") {
