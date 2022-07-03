@@ -1,4 +1,4 @@
-package cmd
+package parse
 
 import (
 	"2arch/pkg/logging"

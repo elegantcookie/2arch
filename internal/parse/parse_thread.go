@@ -1,6 +1,7 @@
-package cmd
+package parse
 
 import (
+	"2arch/cmd"
 	"2arch/pkg/logging"
 	"encoding/json"
 	"fmt"
@@ -175,7 +176,7 @@ func isImage(fileType int) bool {
 }
 
 // Скачивает страницу и создает json файл с текстом ответов
-func downloadJson(htmlUrl string) {
+func DownloadJson(htmlUrl string) {
 	start := time.Now()
 
 	logger := logging.Init("logs.txt")
@@ -226,7 +227,7 @@ func downloadJson(htmlUrl string) {
 }
 
 // Скачивает страницу и заполняет её шаблон
-func downloadHtml(htmlUrl string, flags Flags) {
+func DownloadHtml(htmlUrl string, flags cmd.Flags) {
 	start := time.Now()
 
 	logger := logging.Init("logs.txt")
@@ -239,8 +240,8 @@ func downloadHtml(htmlUrl string, flags Flags) {
 	threadInfo := thread.threadInfo
 	rootPath := thread.rootPath
 
-	var fileSet FileSet
-	var filenameSet FilenameSet
+	var fileSet cmd.FileSet
+	var filenameSet cmd.FilenameSet
 
 	postNum := threadInfo.Threads[0].Posts[0].Num
 	postText := threadInfo.Threads[0].Posts[0].Comment
@@ -301,14 +302,14 @@ func downloadHtml(htmlUrl string, flags Flags) {
 		if filesNum != 0 {
 			for j := range files {
 				// Если скачиваются только изображения, то остальные файлы пропускаются
-				if flags.imagesOnly {
+				if flags.ImagesOnly {
 					if !isImage(files[j].Type) {
 						continue
 					}
 				}
 
 				// Если скачиваются только видео, то остальные файлы пропускаются
-				if flags.videosOnly {
+				if flags.VideosOnly {
 					if !isVideo(files[j].Type) {
 						continue
 					}
@@ -334,7 +335,7 @@ func downloadHtml(htmlUrl string, flags Flags) {
 
 				// Если у файла одинаковое имя с другими, но он уникальный, то ему присваивается случайное имя
 				if filenameSet.Contains(files[j].FullName) {
-					files[j].FullName = GenerateFilename()
+					files[j].FullName = cmd.GenerateFilename()
 				}
 
 				// Обновление имени в структуре sFile
