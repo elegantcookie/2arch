@@ -1,20 +1,15 @@
 package cmd
 
 import (
+	"2arch/internal/parse"
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
 )
 
-type Flags struct {
-	isToJson   bool
-	imagesOnly bool
-	videosOnly bool
-}
-
 var (
 	htmlUrl string
-	flags   Flags
+	flags   parse.Flags
 
 	rootCmd = &cobra.Command{
 		Use:   "2arch",
@@ -24,10 +19,10 @@ var (
 Команда для скачивания треда: 2arch -u ссылка_на_тред
 Пример: 2arch -u https://2ch.hk/abu/res/42375.html`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if flags.isToJson {
-				downloadJson(htmlUrl)
+			if flags.IsToJson {
+				parse.DownloadJson(htmlUrl)
 			} else {
-				downloadHtml(htmlUrl, flags)
+				parse.DownloadHtml(htmlUrl, flags)
 			}
 		},
 	}
@@ -35,9 +30,9 @@ var (
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&htmlUrl, "url", "u", "", "Скачать тред по ссылке")
-	rootCmd.PersistentFlags().BoolVarP(&flags.isToJson, "json", "j", false, "Использовать json")
-	rootCmd.PersistentFlags().BoolVarP(&flags.imagesOnly, "images", "i", false, "Скачивать только картинки")
-	rootCmd.PersistentFlags().BoolVarP(&flags.videosOnly, "videos", "v", false, "Скачивать только видео")
+	rootCmd.PersistentFlags().BoolVarP(&flags.IsToJson, "json", "j", false, "Использовать json")
+	rootCmd.PersistentFlags().BoolVarP(&flags.ImagesOnly, "images", "i", false, "Скачивать только картинки")
+	rootCmd.PersistentFlags().BoolVarP(&flags.VideosOnly, "videos", "v", false, "Скачивать только видео")
 }
 
 func Execute() {

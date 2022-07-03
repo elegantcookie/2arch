@@ -1,4 +1,4 @@
-package cmd
+package parse
 
 import (
 	"2arch/pkg/logging"
@@ -175,7 +175,7 @@ func isImage(fileType int) bool {
 }
 
 // Скачивает страницу и создает json файл с текстом ответов
-func downloadJson(htmlUrl string) {
+func DownloadJson(htmlUrl string) {
 	start := time.Now()
 
 	logger := logging.Init("logs.txt")
@@ -226,7 +226,7 @@ func downloadJson(htmlUrl string) {
 }
 
 // Скачивает страницу и заполняет её шаблон
-func downloadHtml(htmlUrl string, flags Flags) {
+func DownloadHtml(htmlUrl string, flags Flags) {
 	start := time.Now()
 
 	logger := logging.Init("logs.txt")
@@ -301,14 +301,14 @@ func downloadHtml(htmlUrl string, flags Flags) {
 		if filesNum != 0 {
 			for j := range files {
 				// Если скачиваются только изображения, то остальные файлы пропускаются
-				if flags.imagesOnly {
+				if flags.ImagesOnly {
 					if !isImage(files[j].Type) {
 						continue
 					}
 				}
 
 				// Если скачиваются только видео, то остальные файлы пропускаются
-				if flags.videosOnly {
+				if flags.VideosOnly {
 					if !isVideo(files[j].Type) {
 						continue
 					}
