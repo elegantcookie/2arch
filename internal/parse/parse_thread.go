@@ -1,7 +1,6 @@
 package parse
 
 import (
-	"2arch/cmd"
 	"2arch/pkg/logging"
 	"encoding/json"
 	"fmt"
@@ -227,7 +226,7 @@ func DownloadJson(htmlUrl string) {
 }
 
 // Скачивает страницу и заполняет её шаблон
-func DownloadHtml(htmlUrl string, flags cmd.Flags) {
+func DownloadHtml(htmlUrl string, flags Flags) {
 	start := time.Now()
 
 	logger := logging.Init("logs.txt")
@@ -240,8 +239,8 @@ func DownloadHtml(htmlUrl string, flags cmd.Flags) {
 	threadInfo := thread.threadInfo
 	rootPath := thread.rootPath
 
-	var fileSet cmd.FileSet
-	var filenameSet cmd.FilenameSet
+	var fileSet FileSet
+	var filenameSet FilenameSet
 
 	postNum := threadInfo.Threads[0].Posts[0].Num
 	postText := threadInfo.Threads[0].Posts[0].Comment
@@ -335,7 +334,7 @@ func DownloadHtml(htmlUrl string, flags cmd.Flags) {
 
 				// Если у файла одинаковое имя с другими, но он уникальный, то ему присваивается случайное имя
 				if filenameSet.Contains(files[j].FullName) {
-					files[j].FullName = cmd.GenerateFilename()
+					files[j].FullName = GenerateFilename()
 				}
 
 				// Обновление имени в структуре sFile

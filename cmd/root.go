@@ -7,15 +7,9 @@ import (
 	"os"
 )
 
-type Flags struct {
-	IsToJson   bool
-	ImagesOnly bool
-	VideosOnly bool
-}
-
 var (
 	htmlUrl string
-	flags   Flags
+	flags   parse.Flags
 
 	rootCmd = &cobra.Command{
 		Use:   "2arch",

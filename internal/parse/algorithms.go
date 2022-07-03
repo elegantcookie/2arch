@@ -1,7 +1,6 @@
-package cmd
+package parse
 
 import (
-	"2arch/internal/parse"
 	"math/rand"
 	"time"
 )
@@ -11,14 +10,14 @@ import (
 // FileSet - множество для упрощенных файлов.
 //Нужна для того, чтобы определять повторяющиеся файлы
 type FileSet struct {
-	Files []parse.SimplifiedFile
+	Files []SimplifiedFile
 }
 
-func (set *FileSet) Add(file parse.SimplifiedFile) {
+func (set *FileSet) Add(file SimplifiedFile) {
 	set.Files = append(set.Files, file)
 }
 
-func (set *FileSet) Contains(file parse.SimplifiedFile) bool {
+func (set *FileSet) Contains(file SimplifiedFile) bool {
 	// Возможно следует использовать что-то вроде cmp.Equal или Reflect.DeepEqual
 	for i := range set.Files {
 		if set.Files[i].Size == file.Size && set.Files[i].Type == file.Type && set.Files[i].Width == file.Width && set.Files[i].Height == file.Height {
@@ -28,7 +27,7 @@ func (set *FileSet) Contains(file parse.SimplifiedFile) bool {
 	return false
 }
 
-func (set *FileSet) Find(file parse.SimplifiedFile) *parse.SimplifiedFile {
+func (set *FileSet) Find(file SimplifiedFile) *SimplifiedFile {
 	// Возможно следует использовать что-то вроде cmp.Equal или Reflect.DeepEqual
 	for i := range set.Files {
 		if set.Files[i].Size == file.Size && set.Files[i].Type == file.Type && set.Files[i].Width == file.Width && set.Files[i].Height == file.Height {
