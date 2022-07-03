@@ -394,8 +394,8 @@ func downloadHtml(htmlUrl string, flags Flags) {
 		f.Close()
 
 	}
-	logMessage(fmt.Sprintf("files saved at %s", htmlFilePath))
+	logging.LogMessage(fmt.Sprintf("files saved at %s", htmlFilePath))
 	wg.Wait()
 	bar.Finish()
-	defer logMessage(fmt.Sprintf("Тред №%d скачан за: %s", threadNum, time.Since(start)))
+	defer logging.LogMessage(fmt.Sprintf("Тред №%d скачан за: %s", threadNum, time.Since(start)))
 }
