@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	"2arch/pkg/logging"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 )
@@ -27,20 +27,6 @@ func handleRequestError(res *http.Response, err error) error {
 	return nil
 }
 
-func logAndSkipError(err error) {
-	f, _ := os.OpenFile("logs.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	defer f.Close()
-	log.SetOutput(f)
-	log.Printf("Skipped file: %s reload started...", err.Error())
-}
-
-func logMessage(message string) {
-	f, _ := os.OpenFile("logs.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	defer f.Close()
-	log.SetOutput(f)
-	log.Println(message)
-}
-
 func parse(url string) (*http.Response, error) {
 	res, err := http.Get(url)
 	return res, handleRequestError(res, err)
@@ -50,7 +36,7 @@ func parse(url string) (*http.Response, error) {
 func createFile(filePath string) (*os.File, error) {
 	output, err := os.Create(filePath)
 	if err != nil {
-		logAndSkipError(err)
+		logging.LogAndSkipError(err)
 		return output, err
 	}
 	return output, nil
@@ -59,7 +45,7 @@ func createFile(filePath string) (*os.File, error) {
 func downloadFile(filePath string, url string) bool {
 	output, err := createFile(filePath)
 	if err != nil {
-		logAndSkipError(err)
+		logging.LogAndSkipError(err)
 		return false
 	}
 	defer output.Close()
@@ -71,14 +57,14 @@ func downloadFile(filePath string, url string) bool {
 
 	response, err := client.Do(req)
 	if err != nil {
-		logAndSkipError(err)
+		logging.LogAndSkipError(err)
 		return false
 	}
 	defer response.Body.Close()
 	_, err = io.Copy(output, response.Body)
 
 	if err != nil {
-		logAndSkipError(err)
+		logging.LogAndSkipError(err)
 		return false
 	}
 	return true
